@@ -139,11 +139,6 @@ export default class ActorSystem implements IProcessor {
    * @param classFn Constructor of the actor to create
    * @param values Parameters to pass to the constructor
    */
-  // public actorOf<T extends IActor>(ClassFn: new (...args: any[]) => T, values: any[]): T {
-  // public actorOf<T extends Actor>(
-  //   ClassFn: new (...args: ActorConstructorParams<T>) => T,
-  //   ...values: ActorConstructorParams<T>
-  // ): T {
   public actorOf<T extends Actor, ActorConstructor>(
     ClassFn: new (arg: ActorConstructor) => T,
     constructorArg: ActorConstructor,
@@ -224,7 +219,7 @@ export default class ActorSystem implements IProcessor {
     }
   }
 
-  private setupInstance(instance: Actor, proxy: any): void {
+  private setupInstance(instance: Actor, proxy: Actor): void {
     instance.self = proxy
     instance.system = this
     instance.materializers = this.materializers

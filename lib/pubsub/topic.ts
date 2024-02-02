@@ -73,55 +73,9 @@ interface TopicConstructor extends ActorConstructor {
 export default class Topic<Protocol extends IProtocol> extends Actor {
   private readonly subscriptions: Map<string, Actor & ProtocolMethods<Protocol>>
 
-  // public constructor({ topicName, protocol }: TopicConstructor<Protocol>) {
-  //   super('topics/' + topicName)
-  //   this.subscriptions = new Map()
-  //   const props = Object.getOwnPropertyNames(protocol.prototype)
-  //   props
-  //     .filter((k) => k !== 'constructor')
-  //     .forEach((k) => {
-  //       this.constructor.prototype[k] = (...args: []) => {
-  //         this.subscriptions.forEach((actor: any) => actor[k].apply(actor, args)) // eslint-disable-line
-  //       }
-  //     })
-  // }
   public constructor({ topicName }: TopicConstructor) {
     super('topics/' + topicName)
     this.subscriptions = new Map()
-
-    // return new Proxy(this, {
-    //   get: (target, prop, receiver) => {
-    //     if (typeof target[prop] === 'function') {
-    //       return (...args) => {
-    //         target.subscriptions.forEach((subscriber) => {
-    //           if (typeof subscriber[prop] === 'function') {
-    //             subscriber[prop](...args)
-    //           }
-    //         })
-    //         return Reflect.apply(target[prop], target, args)
-    //       }
-    //     }
-    //     return Reflect.get(target, prop, receiver)
-    //   },
-    // })
-
-    // const protocolInstance = new ClassFn()
-    // return new Proxy(protocolInstance, {
-    //   get: (target, prop, receiver) => {
-    //     if (typeof target[prop] === 'function') {
-    //       return (...args) => {
-    //         // Notify all subscribers
-    //         this.subscriptions.forEach((subscriber) => {
-    //           if (typeof subscriber[prop] === 'function') {
-    //             subscriber[prop](...args)
-    //           }
-    //         })
-    //         return Reflect.apply(target[prop], target, args)
-    //       }
-    //     }
-    //     return Reflect.get(target, prop, receiver)
-    //   },
-    // })
   }
 
   /**
@@ -131,17 +85,7 @@ export default class Topic<Protocol extends IProtocol> extends Actor {
    * @param name Name of the topic to be created
    * @param protocol Protocol of the topic
    */
-  // public static for<T>(system: ActorSystem, name: string, p: new (arg: ActorConstructor) => T): Topic<T> {
-  //   return system.actorOf<Topic<T>, TopicConstructor<T>>(Topic, { topicName: name, consumerClass })
-  // }
-  // public static for(system: ActorSystem, topicName: string, ClassFn: new () => Protocol): Topic {
-  public static for<T extends IProtocol>(
-    system: ActorSystem,
-    topicName: string,
-    //ClassFn?: new () => Topic<T>,
-  ): Topic<T> {
-    // return system.actorOf<Topic<Protocol>, TopicConstructor<Protocol>>(Topic, { topicName, protocol })
-    // return system.actorOf<Topic<IProtocol>, TopicConstructor>(Topic, { topicName, ClassFn })
+  public static for<T extends IProtocol>(system: ActorSystem, topicName: string): Topic<T> {
     return system.actorOf<Topic<T>, TopicConstructor>(Topic, { topicName })
   }
 
@@ -149,55 +93,12 @@ export default class Topic<Protocol extends IProtocol> extends Actor {
     const id = uuid()
     this.subscriptions.set(id, actor)
     return id
-
-    // const id = uuid()
-    // const proxyHandler = {
-    //   get: (target, prop, receiver) => {
-    //     const origMethod = target[prop]
-    //     if (typeof origMethod === 'function') {
-    //       return (...args) => {
-    //         // Notify all subscribers
-    //         this.subscriptions.forEach((subscriber) => {
-    //           if (typeof subscriber[prop] === 'function') {
-    //             subscriber[prop](...args)
-    //           }
-    //         })
-    //         return Reflect.apply(origMethod, target, args)
-    //       }
-    //     }
-    //     return Reflect.get(target, prop, receiver)
-    //   },
-    // }
-    // const proxiedProtocol = new Proxy(protocol, proxyHandler)
-    // this.subscriptions.set(id, proxiedProtocol)
-    // return id
-
-    // const protocolMethods = protocol.constructor.protocolMethods || []
-    // protocolMethods.forEach((method) => {
-    //   protocol[method] = (...args) => {
-    //     // Notify all subscribers
-    //     this.subscriptions.forEach((subscriber) => {
-    //       if (typeof subscriber[method] === 'function') {
-    //         subscriber[method](...args)
-    //       }
-    //     })
-    //   }
-    // })
-    // return id
   }
 
   public unsubscribe(id: string): void {
     this.subscriptions.delete(id)
   }
 
-  // public notify<K extends keyof Protocol>(methodName: K, ...args: Parameters<Protocol[K]>): void {
-  //   this.subscriptions.forEach((subscriber) => {
-  //     const method = subscriber[methodName]
-  //     if (typeof method === 'function') {
-  //       method(...args)
-  //     }
-  //   })
-  // }
   public notify<K extends keyof ProtocolMethods<Protocol>>(
     methodName: K,
     ...args: Parameters<ProtocolMethods<Protocol>[K]>
@@ -208,18 +109,5 @@ export default class Topic<Protocol extends IProtocol> extends Actor {
         method.apply(subscriber, args)
       }
     })
-  }
-
-  // public static isActorAndIProtocol(actor: any): actor is Actor & ProtocolMethods<IProtocol> {
-  //   return actor instanceof Actor && Object.keys(actor).every((key) => typeof actor[key] === 'function')
-  // }
-  // In Topic class
-  public static isActorAndIProtocol(actor: any): actor is Actor & IProtocol {
-    // Dynamically import 'Actor' if needed or just ensure it's available
-    // Ensure that 'Actor' is imported in a way that doesn't cause a circular dependency
-    const isActorInstance = actor instanceof Actor // Ensure Actor is defined and imported correctly
-    const conformsToIProtocol = typeof actor === 'object' && actor !== null // Basic check, can be improved
-
-    return isActorInstance && conformsToIProtocol
   }
 }

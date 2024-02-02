@@ -31,7 +31,6 @@ export default class ActorProxy {
     methodName: string,
     args: any[],
   ): Promise<object> {
-    // console.log(`sendAndReturn ${actorId} methodName = `, methodName)
     return new Promise((resolve, reject) =>
       mailbox.push(Message.of(actorId, ActorMessage.of(methodName, args, resolve, reject))),
     )
@@ -45,24 +44,6 @@ export default class ActorProxy {
    * @returns A proxy object that represents the actor.
    */
   public static of<T extends IActor>(mailbox: Mailbox<ActorMessage>, actor: T): T {
-    // const proxy = new Proxy(actor, {
-    //   get(target, prop, receiver) {
-    //     const property = Reflect.get(target, prop, receiver)
-    //     if (typeof prop === 'string') {
-    //       // Intercept function calls
-    //       return (...args: any[]) => ActorProxy.sendAndReturn(mailbox, actor.id, prop, args)
-    //     } else {
-    //       // Handle getters
-    //       return property
-    //     }
-    //   },
-    //   set(target, prop, value, receiver) {
-    //     // Handle setters
-    //     return Reflect.set(target, prop, value, receiver)
-    //   },
-    // })
-    // return proxy as T
-
     // The 'handler' for the proxy defines custom behavior for fundamental operations
     // on the proxy object. This includes property access (get) and property assignment (set).
     const handler: ProxyHandler<T> = {
@@ -73,19 +54,6 @@ export default class ActorProxy {
         if (prop === 'ref') {
           return actor
         }
-
-        // // Check for private fields access
-        // if (typeof prop === 'string' && prop.startsWith('#')) {
-        //   console.error('Access to private fields is not allowed')
-        //   return undefined
-        // }
-
-        // // Handle getters locally
-        // const isGetter =
-        //   Reflect.getPrototypeOf(target) && Reflect.getOwnPropertyDescriptor(Reflect.getPrototypeOf(target), prop)?.get
-        // if (isGetter) {
-        //   return Reflect.get(target, prop, receiver)
-        // }
 
         // First, check if the property being accessed has a special getter function.
         // A getter function is a special method that looks like a property. It's
@@ -104,14 +72,11 @@ export default class ActorProxy {
         // 'Reflect.get' is a standard way to get the value of a property from an object.
         const value = Reflect.get(target, prop, receiver)
 
-        // console.log(`ActorProxy.of ${actor.id} prop = ${String(prop)} value =`, value)
-
         // For function properties, instead of executing the function locally,
         // it sends the method invocation to a remote actor and returns the result.
         if (typeof value === 'function') {
           return (...args) => {
             return ActorProxy.sendAndReturn(mailbox, actor.id, prop as string, args)
-            // return value.apply(target, args)
           }
         }
 

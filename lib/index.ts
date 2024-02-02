@@ -6,7 +6,7 @@
  */
 
 export { default as Actor } from './actor-system/actor'
-export type { ActorConstructor, ActorState } from './actor-system/actor'
+export type { ActorConstructor } from './actor-system/actor'
 export { default as ActorSystem } from './actor-system/actor-system'
 export { default as IMaterializer } from './actor-system/materializer/materializer'
 export { default as IResolver } from './actor-system/resolver/resolver'

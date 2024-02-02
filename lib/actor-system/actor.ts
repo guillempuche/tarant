@@ -19,11 +19,6 @@ import Topic, { IProtocol, ProtocolMethods } from '../pubsub/topic'
 
 type Cancellable = string
 
-// export type ActorConstructor<T extends Actor, Args extends any[]> = new (...args: Args) => T
-// export type ActorConstructorParams<T extends Actor> = ConstructorParameters<{ new (...args: any[]): T }>
-// export type ActorConstructorParams<T extends Actor> = ConstructorParameters<T>
-// export type ActorConstructorParams<T extends new (...args: any) => Actor> = ConstructorParameters<T>
-
 /**
  * Represents the constructor type for an actor. This is used to define the signature
  * of actor constructors in the system.
@@ -37,22 +32,6 @@ export interface ActorConstructor {}
 export interface IActor extends ISubscriber<ActorMessage>, IActorSupervisor {
   id: string
 }
-
-export type ActorState = Omit<
-  Actor,
-  // | 'self'
-  | 'partitions'
-  | 'system'
-  | 'materializers'
-  | 'supervisor'
-  | 'scheduled'
-  | 'topicSubscriptions'
-  | 'busy'
-  // | 'ref'
-  | 'reactState'
-  | 'reactSnapshot'
-  | 'reactSubs'
->
 
 /**
  * Class that must be extended by all actors. All defined public methods in actors should be
@@ -75,13 +54,8 @@ export default abstract class Actor implements IActor {
   // protected ref: this;
   ref: this
 
-  // public reactSnapshot?: () => ActorState
-  // public reactState: ActorState
   public stateCopy: any
-  public stateChangeSubscriptions?: Map<any, any>
-
-  // // Allow state management libraries to define new properties
-  // [key: string]: any
+  public stateChangeSubscriptions?: Map<string, any>
 
   protected constructor(id?: string) {
     this.id = id || uuid()
@@ -229,15 +203,10 @@ export default abstract class Actor implements IActor {
   }
 
   protected subscribeToTopic<T extends IProtocol>(topic: Topic<T>): void {
-    // if (this.#isActorAndProtocol()) {
-    // if (Topic.isActorAndIProtocol(this)) {
     setTimeout(async () => {
       const topicSubscription = await topic.subscribe(this as unknown as Actor & ProtocolMethods<T>)
       this.topicSubscriptions.set(topic.id, topicSubscription)
     }, 0)
-    // } else {
-    //   console.error('Actor does not implement required protocol methods.')
-    // }
   }
 
   protected unsubscribeFromTopic(topic: Topic<IProtocol>): void {
@@ -251,17 +220,6 @@ export default abstract class Actor implements IActor {
   }
 
   private dispatchAndPromisify(actorMessage: ActorMessage): Promise<any> {
-    // try {
-    //   const r: any = this.constructor.prototype[actorMessage.methodName].apply(this, actorMessage.arguments)
-    //   if (r && r.then && r.catch) {
-    //     return r
-    //   } else {
-    //     return Promise.resolve(r)
-    //   }
-    // } catch (ex) {
-    //   return Promise.reject(ex)
-    // }
-
     try {
       if (Reflect.has(this, actorMessage.methodName)) {
         // console.log(`dispatchAndPromisify this.${actorMessage.methodName}`)
@@ -274,49 +232,7 @@ export default abstract class Actor implements IActor {
     }
   }
 
-  // private initialized(): void {
   initialized(): void {
     this.materializers.forEach((materializer) => materializer.onInitialize(this))
-  }
-
-  // private isActorAndIProtocol(): this is Actor & ProtocolMethods<IProtocol> {
-  //   return this instanceof Actor && Object.keys(this).every((key) => typeof this[key] === 'function')
-  // }
-
-  /**
-   * Type guard function to check if an object is both an Actor and conforms to ProtocolMethods<IProtocol>.
-   * @param actor The object to check.
-   * @returns True if the object is an Actor and conforms to ProtocolMethods<IProtocol>, false otherwise.
-  //  */
-  // #isActorAndProtocol(): this is Actor & ProtocolMethods<IProtocol> {
-  //   const isActorInstance = this instanceof Actor
-  //   const conformsToProtocolMethods =
-  //     isActorInstance &&
-  //     Object.keys(this).every((key) => {
-  //       const prop = this[key]
-  //       console.log(`Property: ${key}, is Function: ${typeof prop === 'function'}`) // Logging each property and if it's a function
-  //       return typeof prop === 'function'
-  //     })
-  //   console.log(`Conforms to Protocol Methods: ${conformsToProtocolMethods}`) // Logging if it conforms to Protocol Methods
-  //   return conformsToProtocolMethods
-  // }
-  #isActorAndProtocol<T extends IProtocol>(methodNames: Array<keyof T>): this is Actor & ProtocolMethods<T> {
-    // #isActorAndProtocol<T extends IProtocol>(): this is Actor & ProtocolMethods<T> {
-    const isActorInstance = this instanceof Actor
-    // return Object.getOwnPropertyNames(T.prototype).filter(prop => typeof T.prototype[prop] === 'function');
-
-    // const hasAllMethods = methodNames.every(methodName =>
-    //   typeof this[methodName] === 'function'
-    // );
-    // const protocolMethods = Object.keys(ProtocolMethods<T>());
-    // const hasRequiredMethods = protocolMethods.every(method => typeof this[method] === 'function');
-
-    // const protocolMethods = Object.getOwnPropertyNames(T.prototype)
-    // const hasAllMethods = protocolMethods
-    //   .filter((method) => method !== 'constructor')
-    //   .every((method) => typeof this[method] === 'function')
-
-    // return isActorInstance && hasAllMethods
-    return true
   }
 }
