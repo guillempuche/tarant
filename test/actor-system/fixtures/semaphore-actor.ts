@@ -5,14 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Actor from '../../../lib/actor-system/actor'
+import Actor, { ActorConstructor } from '../../../lib/actor-system/actor'
 import sleep from './sleep'
 
+export interface SemaphoreActorConstructor extends ActorConstructor {
+  id: string
+  callback: (n: number) => void
+}
 export default class SemaphoreActor extends Actor {
   private current: number
   private readonly callback: (n: number) => void
 
-  public constructor(id: string, callback: (n: number) => void) {
+  public constructor({ id, callback }: SemaphoreActorConstructor) {
     super(id)
 
     this.current = 0

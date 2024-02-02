@@ -26,7 +26,6 @@ import { Actor } from '../../lib'
 import ActorMessage from '../../lib/actor-system/actor-message'
 import ActorProxy from '../../lib/actor-system/actor-proxy'
 import Mailbox from '../../lib/mailbox/mailbox'
-import Message from '../../lib/mailbox/message'
 
 class SomeActor extends Actor {
   constructor() {
@@ -60,12 +59,12 @@ describe('actor proxy', () => {
   describe('send and return', () => {
     it('should return a promise that pass and push the message to the mailbox', async () => {
       const mailbox = new Mailbox<ActorMessage>()
-      const actorId = faker.datatype.uuid()
-      const methodName = faker.datatype.uuid()
-      const resultActorMessage = faker.datatype.uuid()
-      const resultMessage = faker.datatype.uuid()
-      const expectedResult = faker.datatype.uuid()
-      const args = [faker.datatype.uuid(), faker.datatype.uuid()]
+      const actorId = faker.string.uuid()
+      const methodName = faker.string.uuid()
+      const resultActorMessage = faker.string.uuid()
+      const resultMessage = faker.string.uuid()
+      const expectedResult = faker.string.uuid()
+      const args = [faker.string.uuid(), faker.string.uuid()]
 
       actorMessageMock.of.mockImplementation((_, __, resolve, ___) => {
         resolve(expectedResult)
@@ -83,11 +82,11 @@ describe('actor proxy', () => {
 
     it('should return a promise that fails and push the message to the mailbox if fails', async () => {
       const mailbox = new Mailbox<ActorMessage>()
-      const actorId = faker.datatype.uuid()
-      const methodName = faker.datatype.uuid()
-      const resultMessage = faker.datatype.uuid()
-      const expectedResult = faker.datatype.uuid()
-      const args = [faker.datatype.uuid(), faker.datatype.uuid()]
+      const actorId = faker.string.uuid()
+      const methodName = faker.string.uuid()
+      const resultMessage = faker.string.uuid()
+      const expectedResult = faker.string.uuid()
+      const args = [faker.string.uuid(), faker.string.uuid()]
 
       actorMessageMock.of.mockImplementation((_, __, ___, reject) => {
         reject(expectedResult)
@@ -106,11 +105,11 @@ describe('actor proxy', () => {
   it('should proxy request to multiple levels of abstraction', () => {
     const mailbox = new Mailbox<ActorMessage>()
     const actor = new AnotherActor()
-    const result: any = ActorProxy.of(mailbox, actor)
+    const result: AnotherActor = ActorProxy.of(mailbox, actor)
     expect(result.ref).toEqual(actor)
     expect(result.anotherFunction).toBeDefined()
     expect(result.aFunction).toBeDefined()
     expect(result.yetAnotherFunction).toBeDefined()
-    expect(result.self).toBeUndefined()
+    expect(result.self).toBeDefined()
   })
 })

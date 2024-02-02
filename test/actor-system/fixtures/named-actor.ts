@@ -5,12 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Actor from '../../../lib/actor-system/actor'
+import Actor, { ActorConstructor } from '../../../lib/actor-system/actor'
+
+interface NamedActorConstructor extends ActorConstructor {
+  name: string
+}
 
 export default class NamedActor extends Actor {
   private readonly name: string
 
-  public constructor(name: string) {
+  public constructor({ name }: NamedActorConstructor) {
     super(name)
 
     this.name = name

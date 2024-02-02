@@ -5,24 +5,51 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Actor from '../../../lib/actor-system/actor'
-import Topic from '../../../lib/pubsub/topic'
+import Actor, { ActorConstructor } from '../../../lib/actor-system/actor'
+import Topic, { IProtocol, ProtocolMethods } from '../../../lib/pubsub/topic'
 
-export default class TopicSubscriberFromConstructorActor extends Actor {
-  private readonly callback: any
+interface SubscriberFromConstructorActorCtr extends ActorConstructor {
+  callback: (incomingData: string) => void
+  topicToListen: Topic<IProtocolSenderActor>
+}
 
-  public constructor(callback: any, topic: Topic<TopicSubscriberFromConstructorActor>) {
+export class SubscriberFromConstructorActor extends Actor implements ProtocolMethods<IProtocolSenderActor> {
+  private readonly callback: (incomingData: string) => void
+
+  public constructor({ callback, topicToListen }: SubscriberFromConstructorActorCtr) {
     super()
 
     this.callback = callback
-    this.subscribeToTopic(topic)
+    this.subscribeToTopic(topicToListen)
   }
 
-  public triggerUnsubscriptionOf(topic: Topic<TopicSubscriberFromConstructorActor>): void {
+  public triggerUnsubscriptionOf(topic: Topic<IProtocolSenderActor>): void {
     this.unsubscribeFromTopic(topic)
   }
 
+  // Listen SenderActor method `listenSender`
+  public listenSender(incomingData: string): void {
+    this.callback(incomingData)
+  }
+}
+
+export abstract class IProtocolSenderActor implements IProtocol {
+  abstract listenSender(withString: string): void
+}
+
+interface SenderActorConstructor extends ActorConstructor {
+  topicToSendThings: Topic<IProtocolSenderActor>
+}
+export class SenderActor extends Actor {
+  private readonly topic: Topic<IProtocolSenderActor>
+
+  public constructor({ topicToSendThings }: SenderActorConstructor) {
+    super()
+
+    this.topic = topicToSendThings
+  }
+
   public doSomething(withString: string): void {
-    this.callback(withString)
+    this.topic.notify('listenSender', withString)
   }
 }

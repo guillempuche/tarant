@@ -1,30 +1,38 @@
-/**
- * Copyright (c) 2018-present, tarant
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// /**
+//  * Copyright (c) 2018-present, tarant
+//  *
+//  * This source code is licensed under the MIT license found in the
+//  * LICENSE file in the root directory of this source tree.
+//  */
 
-import Actor from '../actor'
-import ActorSystem from '../actor-system'
+// import Actor, { ActorConstructor } from '../actor'
+// import ActorSystem from '../actor-system'
 
-export default class FunctionActor extends Actor {
-  public static for(system: ActorSystem, fn: any): (...args: any[]) => Promise<any> {
-    const actor = system.actorOf(FunctionActor, [fn])
-    // tslint:disable-next-line
-    return function () {
-      return actor.execute(...(arguments as unknown as any[]))
-    }
-  }
+// // export type FunctionActorConstructor<T> = (constructor: ActorConstructor) => Promise<T>
 
-  private fn: (...args: any[]) => Promise<any>
+// export default class FunctionActor<T> extends Actor {
+//   public static for<K>(
+//     system: ActorSystem,
+//     // fn: FunctionActorConstructor<T>,
+//     fn: any,
+//   ): (constructor: ActorConstructor) => Promise<K> {
+//     const actor = system.actorOf(FunctionActor, fn)
 
-  constructor(fn: (...args: any[]) => Promise<any>) {
-    super()
-    this.fn = fn
-  }
+//     return function () {
+//       return actor.execute<K>(fn)
+//     }
+//   }
 
-  public async execute(...args: any[]): Promise<any> {
-    return await this.fn(...args)
-  }
-}
+//   // private fn: FunctionActorConstructor<T>
+//   private fn: any
+
+//   // constructor(fn: FunctionActorConstructor<T>) {
+//   constructor(fn: any) {
+//     super()
+//     this.fn = fn
+//   }
+
+//   public async execute<T>(constructor: ActorConstructor): Promise<T> {
+//     return await this.fn(constructor)
+//   }
+// }

@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { Timer } from '../../common'
 import Mailbox from '../../mailbox/mailbox'
 import ActorMessage from '../actor-message'
 import IMaterializer from '../materializer/materializer'
@@ -21,7 +22,7 @@ export default class ActorSystemConfigurationBuilder {
   public materializers: IMaterializer[] = []
   public resolvers: IResolver[] = []
   public resources: string[] = ['default']
-  public tickInterval: number = 1
+  public tickInterval: Timer = 1
   public mailbox: Mailbox<ActorMessage> = Mailbox.empty()
   public supervisor: IActorSupervisor = new NoopActorSupervisor()
 

@@ -8,7 +8,7 @@
 import ActorSystem from '../../lib/actor-system/actor-system'
 import Topic from '../../lib/pubsub/topic'
 import sleep from '../actor-system/fixtures/sleep'
-import TopicSubscriberActor from '../actor-system/fixtures/topic-subscriber-actor'
+import { IProtocolSenderActor, SenderActor, SubscriberActor } from '../actor-system/fixtures/topic-subscriber-actor'
 
 describe('Topics', () => {
   jest.useRealTimers()
@@ -25,12 +25,12 @@ describe('Topics', () => {
   test('should send the message to a single subscriber', async () => {
     const callback = jest.fn()
 
-    const topic = Topic.for(actorSystem, 'my-topic', TopicSubscriberActor)
-    const receiver = actorSystem.actorOf(TopicSubscriberActor, [callback])
+    const topic = Topic.for<IProtocolSenderActor>(actorSystem, 'my-topic')
+    const sender = actorSystem.actorOf(SenderActor, { topicToSendThings: topic })
+    actorSystem.actorOf(SubscriberActor, { callback, topicToListen: topic })
 
-    topic.subscribe(receiver)
     await sleep(10)
-    topic.doSomething('withMessage')
+    sender.doSomething('withMessage')
     await sleep(10)
 
     expect(callback).toHaveBeenCalledWith('withMessage')
@@ -39,14 +39,13 @@ describe('Topics', () => {
   test('should send the message to multiple subscribers', async () => {
     const callback = jest.fn()
 
-    const topic = Topic.for(actorSystem, 'my-topic', TopicSubscriberActor)
-    const receiver1 = actorSystem.actorOf(TopicSubscriberActor, [callback])
-    const receiver2 = actorSystem.actorOf(TopicSubscriberActor, [callback])
+    const topic = Topic.for<IProtocolSenderActor>(actorSystem, 'my-topic')
+    const sender = actorSystem.actorOf(SenderActor, { topicToSendThings: topic })
+    actorSystem.actorOf(SubscriberActor, { callback, topicToListen: topic })
+    actorSystem.actorOf(SubscriberActor, { callback, topicToListen: topic })
 
-    topic.subscribe(receiver1)
-    topic.subscribe(receiver2)
     await sleep(10)
-    topic.doSomething('withMessage')
+    sender.doSomething('withMessage')
     await sleep(10)
 
     expect(callback).toHaveBeenCalledTimes(2)

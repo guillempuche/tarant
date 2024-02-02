@@ -5,14 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import ActorMessage from '../actor-system/actor-message'
 import Partition from './partition'
 
-export default class Message<T> {
-  public static of<T>(partition: Partition, content: T): Message<T> {
+export default class Message<T extends ActorMessage> {
+  public static of<T extends ActorMessage>(partition: Partition, content: T): Message<T> {
     return new Message(partition, content)
   }
 
-  public static ofJson(partition: Partition, content: object): Message<object> {
+  public static ofJson<T extends ActorMessage>(partition: Partition, content: T): Message<T> {
     return new Message(partition, content)
   }
 

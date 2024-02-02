@@ -8,7 +8,11 @@
 import ActorSystem from '../../lib/actor-system/actor-system'
 import Topic from '../../lib/pubsub/topic'
 import sleep from './fixtures/sleep'
-import TopicSubscriberFromConstructorActor from './fixtures/topic-subscriber-from-constructor-actor'
+import {
+  IProtocolSenderActor,
+  SenderActor,
+  SubscriberFromConstructorActor,
+} from './fixtures/topic-subscriber-from-constructor-actor'
 
 describe('Actor System Subscriptions', () => {
   jest.useRealTimers()
@@ -23,26 +27,33 @@ describe('Actor System Subscriptions', () => {
   })
 
   test('call methods in a subscriptor', async () => {
-    const cb = jest.fn()
-    const topic = Topic.for(actorSystem, 'topic-name', TopicSubscriberFromConstructorActor)
-    const actor = actorSystem.actorOf(TopicSubscriberFromConstructorActor, [cb, topic])
+    // const cb = jest.fn()
+    // const topic = Topic.for<IProtocolSenderActor>(actorSystem, 'topic-name')
+    // actorSystem.actorOf(TopicSubscriberFromConstructorActor, { callback: cb, topic })
+
+    const callback = jest.fn()
+    const topic = Topic.for<IProtocolSenderActor>(actorSystem, 'my-topic')
+    const sender = actorSystem.actorOf(SenderActor, { topicToSendThings: topic })
+    actorSystem.actorOf(SubscriberFromConstructorActor, { callback, topicToListen: topic })
+
     await sleep(10)
-    topic.doSomething('xxx')
+    sender.doSomething('withMessage')
     await sleep(10)
 
-    expect(cb).toHaveBeenCalledWith('xxx')
+    expect(callback).toHaveBeenCalledWith('withMessage')
   })
 
   test('not call methods when unsubscribed', async () => {
-    const cb = jest.fn()
-    const topic = Topic.for(actorSystem, 'topic-name', TopicSubscriberFromConstructorActor)
-    const actor = actorSystem.actorOf(TopicSubscriberFromConstructorActor, [cb, topic])
-    await sleep(100)
+    const callback = jest.fn()
+    const topic = Topic.for<IProtocolSenderActor>(actorSystem, 'my-topic')
+    const sender = actorSystem.actorOf(SenderActor, { topicToSendThings: topic })
+    const actor = actorSystem.actorOf(SubscriberFromConstructorActor, { callback, topicToListen: topic })
+
+    await sleep(10)
     actor.triggerUnsubscriptionOf(topic)
     await sleep(100)
-    topic.doSomething('xxx')
+    sender.doSomething('withMessage')
     await sleep(100)
-
-    expect(cb).not.toHaveBeenCalledWith('xxx')
+    expect(callback).not.toHaveBeenCalledWith('xxx')
   })
 })

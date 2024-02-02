@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
 /**
  * Copyright (c) 2018-present, tarant
  *
@@ -5,20 +6,29 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { ActorMessage } from '../../lib'
 import Mailbox from '../../lib/mailbox/mailbox'
 import Message from '../../lib/mailbox/message'
 import Partition from '../../lib/mailbox/partition'
 import ISubscriber from '../../lib/mailbox/subscriber'
 
 interface IMessageHolder {
-  messages: object[]
+  messages: Message<ActorMessage>[]
 }
 
 describe('Mailbox', () => {
   const partition = '1'
 
   test('should poll messages from producers and offer them to subscribers', () => {
-    const message = Message.ofJson(partition, { test: true })
+    const message = Message.ofJson(
+      partition,
+      ActorMessage.of(
+        'testMethod',
+        [],
+        () => {},
+        () => {},
+      ),
+    )
     const mailbox = Mailbox.empty()
     const subscriber = dummySubscriber(partition)
 
@@ -31,7 +41,15 @@ describe('Mailbox', () => {
   })
 
   test('should not poll messages after an unsubscription', () => {
-    const message = Message.ofJson(partition, { test: true })
+    const message = Message.ofJson(
+      partition,
+      ActorMessage.of(
+        'testMethod',
+        [],
+        () => {},
+        () => {},
+      ),
+    )
     const mailbox = Mailbox.empty()
     const subscriber = dummySubscriber(partition)
 
@@ -44,12 +62,13 @@ describe('Mailbox', () => {
   })
 })
 
-function dummySubscriber(partition: Partition): ISubscriber<object> & IMessageHolder {
-  const messages: object[] = []
+function dummySubscriber(partition: Partition): ISubscriber<ActorMessage> & IMessageHolder {
+  const messages: Message<ActorMessage>[] = []
 
   return {
     messages,
-    onReceiveMessage: (message) => {
+    onReceiveMessage: (message: Message<ActorMessage>) => {
+      console.log()
       messages.push(message)
       return Promise.resolve(true)
     },

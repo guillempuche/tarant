@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { Actor } from '../../lib'
 import ActorMessage from '../../lib/actor-system/actor-message'
 import ActorSystem from '../../lib/actor-system/actor-system'
 import ActorSystemConfigurationBuilder from '../../lib/actor-system/configuration/actor-system-configuration-builder'
@@ -25,15 +26,15 @@ describe('Actor System Supervision', () => {
     actorSystem = ActorSystem.for(ActorSystemConfigurationBuilder.define().withTopSupervisor(supervisor).done())
   })
 
-  const messagesForActor = (actor: any): ActorMessage[] => {
-    const unsafeSystem = actorSystem as any
-    const subscription = unsafeSystem.subscriptions.get(actor.ref.id) as string
-    const partitions = unsafeSystem.mailbox.subscribedPartitions[subscription] as [string]
+  const messagesForActor = (actor: Actor): ActorMessage[] => {
+    const unsafeSystem = actorSystem
+    const subscription = unsafeSystem['subscriptions'].get(actor.ref.id) as string
+    const partitions = unsafeSystem['mailbox']['subscribedPartitions'][subscription] as [string]
 
     return partitions.reduce((prev: ActorMessage[], cur: string): ActorMessage[] => {
-      return unsafeSystem.mailbox.subscriptions[cur]
-        .filter((managedSub: any) => managedSub.id === subscription)
-        .map((managedSub: any): ActorMessage[] => managedSub.messages)
+      return unsafeSystem['mailbox']['subscriptions'][cur]
+        .filter((managedSub: { id: string }) => managedSub.id === subscription)
+        .flatMap((managedSub: any): ActorMessage[] => managedSub.messages)
         .concat(prev)
     }, [])
   }
@@ -44,12 +45,12 @@ describe('Actor System Supervision', () => {
 
   test('should call the top supervisor if the actor is a root actor', async () => {
     const thrownException = {}
-    const actor: FailingActor = actorSystem.actorOf(FailingActor, [thrownException])
+    const actor: FailingActor = actorSystem.actorOf(FailingActor, { exceptionToThrow: thrownException })
 
     try {
       await waitFor(() => actor.fails())
     } catch (ex) {
-      expect(ex).toBe(thrownException)
+      expect(ex).toStrictEqual(thrownException)
     }
 
     expect(supervisor.supervise).toHaveBeenCalled()
@@ -59,7 +60,9 @@ describe('Actor System Supervision', () => {
     const thrownException = {}
     const currentSupervisor = { supervise: jest.fn() }
 
-    const parent: ParentOfFailingActorActor = actorSystem.actorOf(ParentOfFailingActorActor, [currentSupervisor])
+    const parent: ParentOfFailingActorActor = actorSystem.actorOf(ParentOfFailingActorActor, {
+      supervisor: currentSupervisor,
+    })
     const actor: FailingActor = await waitFor(() => parent.newFailingActor(thrownException))
 
     try {
@@ -74,7 +77,7 @@ describe('Actor System Supervision', () => {
   test('should not drop the message when the supervision is retry', async () => {
     const thrownException = {}
     supervisor.supervise = () => 'retry-message'
-    const actor: FailingActor = actorSystem.actorOf(FailingActor, [thrownException])
+    const actor: FailingActor = actorSystem.actorOf(FailingActor, { exceptionToThrow: thrownException })
 
     try {
       waitFor(() => actor.fails())

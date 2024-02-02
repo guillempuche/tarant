@@ -5,18 +5,46 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { ActorConstructor, IProtocol, ProtocolMethods, Topic } from '../../../lib'
 import Actor from '../../../lib/actor-system/actor'
 
-export default class TopicSubscriberActor extends Actor {
-  private readonly callback: any
+interface SubscriberActorConstructor extends ActorConstructor {
+  callback: (incomingData: string) => void
+  topicToListen: Topic<IProtocolSenderActor>
+}
 
-  public constructor(callback: any) {
+export class SubscriberActor extends Actor implements ProtocolMethods<IProtocolSenderActor> {
+  private readonly callback: (incomingData: string) => void
+
+  public constructor({ callback, topicToListen }: SubscriberActorConstructor) {
     super()
 
     this.callback = callback
+    this.subscribeToTopic(topicToListen)
+  }
+
+  // Listen SenderActor method `listenSender`
+  public listenSender(incomingData: string): void {
+    this.callback(incomingData)
+  }
+}
+
+export abstract class IProtocolSenderActor implements IProtocol {
+  abstract listenSender(withString: string): void
+}
+interface SenderActorConstructor extends ActorConstructor {
+  topicToSendThings: Topic<IProtocolSenderActor>
+}
+export class SenderActor extends Actor {
+  private readonly topic: Topic<IProtocolSenderActor>
+
+  public constructor({ topicToSendThings }: SenderActorConstructor) {
+    super()
+
+    this.topic = topicToSendThings
   }
 
   public doSomething(withString: string): void {
-    this.callback(withString)
+    this.topic.notify('listenSender', withString)
   }
 }
